@@ -5,9 +5,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -22,23 +19,41 @@ import com.example.myapp.pages.CharacterDetailPage
 import com.example.myapp.pages.CharactersPage
 import com.example.myapp.pages.MapsPage
 import com.example.myapp.pages.ModosPage
+import com.example.myapp.pages.PantallaBuzon
+import com.example.myapp.pages.PantallaConfiguracion
+import com.example.myapp.pages.PantallaInicio
+import com.example.myapp.pages.PantallaRegistroPartidas
 import com.example.myapp.pages.ShopPage
 import com.example.myapp.ui.theme.MyAppTheme
+import com.example.myapp.data.user.UserViewModel
+import androidx.room.Room
+import com.example.myapp.data.AppDatabase
+import com.example.myapp.data.user.UserRepository
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        val db = Room.databaseBuilder(
+            applicationContext,
+            AppDatabase::class.java,
+            "gameDb"
+        ).build()
+
+        val repository = UserRepository(db.userDao())
+        val userViewModel = UserViewModel(repository)
+
         setContent {
             MyAppTheme {
-                AppNavigation()
+                AppNavigation(userViewModel) // 🔹 pásalo al navigation
             }
         }
     }
 }
 
 @Composable
-fun AppNavigation() {
+fun AppNavigation(userViewModel: UserViewModel) {
     val navController = rememberNavController()
 
     NavHost(navController = navController, startDestination = "inicio") {
@@ -51,79 +66,13 @@ fun AppNavigation() {
         }
         composable("mapas") { MapsPage(navController) }//Navigate de pagina mapas
         composable("modos") { ModosPage(navController) }//Navigate de pagina modos
-        composable("jugar") { PantallaGenerica("Jugar", navController) }
+        composable("jugar") { PantallaGenerica("Jugar", navController) }//navigate ejemplo
+        composable("configuracion") { PantallaConfiguracion(navController, userViewModel) }//navigate configuracion
+        composable("registroPartidas") { PantallaRegistroPartidas(navController) }//navigate registro partidas
+        composable("buzon") { PantallaBuzon(navController) }//navigate buzon
     }
 }
 
-@Composable
-fun PantallaInicio(navController: NavController) {
-    Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        content = { innerPadding ->
-            Box(
-                modifier = Modifier
-                    .padding(innerPadding)
-                    .fillMaxSize()
-            ) {
-                // Esquina superior derecha: saldo e iconos
-                Row(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(imageVector = Icons.Default.Check, contentDescription = "Saldo")
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("$$$$$$", style = MaterialTheme.typography.bodyLarge)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Icon(imageVector = Icons.Default.Menu, contentDescription = "Menú")
-                }
-
-                // Izquierda: botones verticales pequeños
-                Column(
-                    modifier = Modifier
-                        .align(Alignment.CenterStart)
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Button(onClick = { navController.navigate("tienda") }) {
-                        Text("Tienda")
-                    }
-                    Button(onClick = { navController.navigate("personajes") }) {
-                        Text("Personajes")
-                    }
-                }
-
-                // Derecha: botones verticales grandes
-                Column(
-                    modifier = Modifier
-                        .align(Alignment.CenterEnd)
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(20.dp)
-                ) {
-                    Button(
-                        onClick = { navController.navigate("mapas") },
-                        modifier = Modifier.width(150.dp).height(60.dp)
-                    ) {
-                        Text("Mapas")
-                    }
-                    Button(
-                        onClick = { navController.navigate("modos") },
-                        modifier = Modifier.width(150.dp).height(60.dp)
-                    ) {
-                        Text("Modos")
-                    }
-                    Button(
-                        onClick = { navController.navigate("jugar") },
-                        modifier = Modifier.width(150.dp).height(60.dp)
-                    ) {
-                        Text("Jugar")
-                    }
-                }
-            }
-        }
-    )
-}
 
 @Composable
 fun PantallaGenerica(nombre: String, navController: NavController) {
