@@ -8,8 +8,8 @@ data class UserEntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val nombre: String,
     val descripcion: String,
-    val etiquetas: List<String>, // ahora ya funciona con el Converter
+    val etiquetas: List<String>, // Converter
     val idUsuario: String,
-    val dinero: Double,
-    val imagenUri: String? = null
+    val dinero: Int, // ahora es Int
+    val imagenUri: String? = null // se puede calcular con un JOIN con personaje
 )

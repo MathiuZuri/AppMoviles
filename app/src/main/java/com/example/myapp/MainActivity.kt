@@ -15,38 +15,38 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.myapp.pages.CharacterDetailPage
-import com.example.myapp.pages.CharactersPage
-import com.example.myapp.pages.MapsPage
-import com.example.myapp.pages.ModosPage
-import com.example.myapp.pages.PantallaBuzon
-import com.example.myapp.pages.PantallaConfiguracion
-import com.example.myapp.pages.PantallaInicio
-import com.example.myapp.pages.PantallaRegistroPartidas
-import com.example.myapp.pages.ShopPage
+import androidx.lifecycle.ViewModelProvider
+import com.example.myapp.pages.*
 import com.example.myapp.ui.theme.MyAppTheme
-import com.example.myapp.data.user.UserViewModel
-import androidx.room.Room
 import com.example.myapp.data.AppDatabase
+import com.example.myapp.data.DatabaseProvider
 import com.example.myapp.data.user.UserRepository
+import com.example.myapp.data.personaje.PersonajeRepository
+import com.example.myapp.data.inventario.InventarioRepository
+import com.example.myapp.data.user.UserViewModel
+import com.example.myapp.data.UserViewModelFactory
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        val db = Room.databaseBuilder(
-            applicationContext,
-            AppDatabase::class.java,
-            "gameDb"
-        ).build()
+        val db = DatabaseProvider.getDatabase(applicationContext)
 
-        val repository = UserRepository(db.userDao())
-        val userViewModel = UserViewModel(repository)
+        // 🔹 Instanciar repositorios
+        val userRepository = UserRepository(db.userDao())
+        val personajeRepository = PersonajeRepository(db.personajeDao())
+        val inventarioRepository = InventarioRepository(db.inventarioDao())
+
+        // 🔹 Usar el Factory para crear el ViewModel
+        val userViewModel = ViewModelProvider(
+            this,
+            UserViewModelFactory(userRepository, personajeRepository, inventarioRepository)
+        )[UserViewModel::class.java]
 
         setContent {
             MyAppTheme {
-                AppNavigation(userViewModel) // 🔹 pásalo al navigation
+                AppNavigation(userViewModel)
             }
         }
     }
@@ -55,24 +55,24 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AppNavigation(userViewModel: UserViewModel) {
     val navController = rememberNavController()
+    userViewModel.loadUser("123456789")
 
     NavHost(navController = navController, startDestination = "inicio") {
         composable("inicio") { PantallaInicio(navController) }
-        composable("tienda") { ShopPage(navController) } //Navigate de pagina tienda
-        composable("personajes") { CharactersPage(navController) } // Navigate a personajes
-        composable("personajeDetalle/{id}") { backStackEntry -> //Navigate a detalles de personaje
+        composable("tienda") { ShopPage(navController) }
+        composable("personajes") { CharactersPage(navController) }
+        composable("personajeDetalle/{id}") { backStackEntry ->
             val id = backStackEntry.arguments?.getString("id") ?: "0"
-            CharacterDetailPage(id, navController) // detalles
+            CharacterDetailPage(id, navController)
         }
-        composable("mapas") { MapsPage(navController) }//Navigate de pagina mapas
-        composable("modos") { ModosPage(navController) }//Navigate de pagina modos
-        composable("jugar") { PantallaGenerica("Jugar", navController) }//navigate ejemplo
-        composable("configuracion") { PantallaConfiguracion(navController, userViewModel) }//navigate configuracion
-        composable("registroPartidas") { PantallaRegistroPartidas(navController) }//navigate registro partidas
-        composable("buzon") { PantallaBuzon(navController) }//navigate buzon
+        composable("mapas") { MapsPage(navController) }
+        composable("modos") { ModosPage(navController) }
+        composable("jugar") { PantallaGenerica("Jugar", navController) }
+        composable("configuracion") { PantallaConfiguracion(navController, userViewModel) }
+        composable("registroPartidas") { PantallaRegistroPartidas(navController) }
+        composable("buzon") { PantallaBuzon(navController) }
     }
 }
-
 
 @Composable
 fun PantallaGenerica(nombre: String, navController: NavController) {
